@@ -1,69 +1,211 @@
-import { useEffect, useState } from "react"
-import { ethers } from "ethers"
+"use client";
 
-function Trade({ toggleTrade, token, provider, factory }) {
-  const [target, setTarget] = useState(0)
-  const [limit, setLimit] = useState(0)
-  const [cost, setCost] = useState(0)
+import { useState, useEffect } from "react";
+import { Contract, BrowserProvider, parseEther, formatEther } from "ethers";
+import { showSuccess, showError } from "@/app/utils/toastUtils";
+import factoryArtifact from "@/app/abis/Factory.json";
+import config from "@/app/config.json";
+import { useRouter } from "next/navigation";
 
-  async function buyHandler(form) {
-    const amount = form.get("amount")
+export default function Trade({ token, factory, onClose }) {
+  const router = useRouter();
+  const [amount, setAmount] = useState("");
+  const [estimatedCost, setEstimatedCost] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [closing, setClosing] = useState(false);
 
-    const cost = await factory.getCost(token.sold)
-    const totalCost = cost * BigInt(amount)
+  const tokenAddress = token?.token ?? token?.tokenAddress ?? token?.address;
 
-    const signer = await provider.getSigner()
+  async function buildFactoryContract(signerOrProvider) {
+    if (factory?.contract) return factory.contract.connect(signerOrProvider);
+    if (factory?.address && factory?.abi) return new Contract(factory.address, factory.abi, signerOrProvider);
 
-    const transaction = await factory.connect(signer).buy(
-      token.token,
-      ethers.parseUnits(amount, 18),
-      { value: totalCost }
-    )
-    await transaction.wait()
+    if (factoryArtifact.address) return new Contract(factoryArtifact.address, factoryArtifact.abi, signerOrProvider);
 
-    toggleTrade()
-  }
+    const ethereum = window.ethereum;
+    if (!ethereum) return null;
+    const provider = new BrowserProvider(ethereum);
+    const net = await provider.getNetwork();
+    const chainId = Number(net.chainId);
 
-  async function getSaleDetails() {
-    const target = await factory.TARGET()
-    setTarget(target)
-
-    const limit = await factory.TOKEN_LIMIT()
-    setLimit(limit)
-
-    const cost = await factory.getCost(token.sold)
-    setCost(cost)
+    if (config?.[chainId]?.factory?.address) {
+      return new Contract(config[chainId].factory.address, factoryArtifact.abi, signerOrProvider);
+    }
+    return null;
   }
 
   useEffect(() => {
-    getSaleDetails()
-  }, [])
+    const computeCost = async () => {
+      if (!amount || Number(amount) <= 0) return setEstimatedCost("");
+
+      try {
+        const ethereum = window.ethereum;
+        if (!ethereum) return;
+
+        const provider = new BrowserProvider(ethereum);
+        const factoryContract = await buildFactoryContract(provider);
+        if (!factoryContract) return;
+
+        const sale = await factoryContract.tokenToSale(tokenAddress);
+        const sold = sale?.sold ?? sale?.[3] ?? sale?.[2];
+        const costPerToken = await factoryContract.getCost(sold);
+
+        const amountWei = parseEther(String(amount));
+        const totalCost = (BigInt(costPerToken) * BigInt(amountWei)) / 10n ** 18n;
+        setEstimatedCost(formatEther(totalCost.toString()));
+      } catch {
+        setEstimatedCost("");
+      }
+    };
+    computeCost();
+  }, [amount, tokenAddress]);
+
+  const closeModal = () => {
+    setClosing(true);
+    setTimeout(() => {
+      onClose?.();
+    }, 250);
+  };
+
+  // BUY HANDLER (final)
+  const buyHandler = async (e) => {
+    e.preventDefault();
+
+    if (!amount || Number(amount) <= 0) return showError("ENTER A VALID TOKEN AMOUNT");
+    if (!tokenAddress) return showError("INVALID TOKEN");
+
+    setLoading(true);
+
+    try {
+      const ethereum = window.ethereum;
+      if (!ethereum) throw new Error("NO WALLET");
+
+      const provider = new BrowserProvider(ethereum);
+      const signer = await provider.getSigner();
+      const factoryContract = await buildFactoryContract(signer);
+
+      const sale = await factoryContract.tokenToSale(tokenAddress);
+      const sold = sale?.sold ?? sale?.[3] ?? sale?.[2];
+      const costPerToken = await factoryContract.getCost(sold);
+
+      const amountWei = parseEther(String(amount));
+      const totalCost = (BigInt(costPerToken) * BigInt(amountWei)) / 10n ** 18n;
+
+      const tx = await factoryContract.buy(tokenAddress, amountWei, { value: totalCost });
+
+      showSuccess("✅ Transaction Sent... Waiting...");
+      await tx.wait();
+
+      showSuccess("✅ Purchase Successful!");
+
+      // fade close
+      setClosing(true);
+
+      setTimeout(() => {
+        onClose?.();
+        router.refresh();
+      }, 350);
+
+    } catch (err) {
+      console.error("BUY ERROR:", err);
+
+      let msg = err?.reason || err?.error?.message || err?.message || "";
+
+      if (err?.code === 4001 || msg.toLowerCase().includes("user denied"))
+        return showError("❌ Transaction Cancelled");
+
+      msg = msg.replace("Factory: ", "");
+      showError(`⚠️ ${msg || "Transaction Failed"}`);
+    }
+
+    setLoading(false);
+  };
 
   return (
-    <div className="trade">
-      <h2>trade</h2>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: closing ? "rgba(0,0,0,0)" : "rgba(0,0,0,0.7)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 99999,
+        transition: "background 0.25s ease"
+      }}
+    >
+      <div
+        style={{
+          width: 720,
+          maxWidth: "96vw",
+          background: "#000",
+          border: "2px solid #00aaff",
+          padding: 28,
+          borderRadius: 10,
+          color: "#fff",
+          textAlign: "center",
+          transform: closing ? "scale(0.92)" : "scale(1)",
+          opacity: closing ? 0 : 1,
+          transition: "transform 0.25s ease, opacity 0.25s ease"
+        }}
+      >
+        <h2>BUY TOKEN</h2>
+        <p style={{ opacity: 0.85 }}>{token?.name}</p>
 
-      <div className="token__details">
-        <p className="name">{token.name}</p>
-        <p>creator: {token.creator.slice(0, 6) + '...' + token.creator.slice(38, 42)}</p>
-        <img src={token.image} alt="Pepe" width={256} height={256} />
-        <p>marketcap: {ethers.formatUnits(token.raised, 18)} ETH</p>
-        <p>base cost: {ethers.formatUnits(cost, 18)} ETH</p>
+        {token?.image && (
+          <img src={token.image} width="180" height="180" style={{ margin: "12px auto", border: "1px solid #00aaff" }} />
+        )}
+
+        <input
+          type="number"
+          min="0"
+          step="0.0001"
+          placeholder="TOKEN AMOUNT"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={{ width: "80%", padding: 10, background: "#050505", color: "#fff", border: "1px solid #00aaff", borderRadius: 6 }}
+        />
+
+        <p style={{ marginTop: 10 }}>{estimatedCost ? `Estimated Cost: ${estimatedCost} ETH` : " "}</p>
+
+        {/* === REPLACED BUTTONS (only these two changed) === */}
+        <div className="buttons" style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1.2rem" }}>
+          {/* BUY - filled bright blue, rounded, white text */}
+          <button
+    onClick={buyHandler}
+    disabled={loading}
+    className="btn--fancy"
+    style={{
+      opacity: loading ? 0.6 : 1,
+      cursor: loading ? "not-allowed" : "pointer",
+      minWidth: "120px"
+    }}
+  >
+    {loading ? "PROCESSING..." : "BUY"}
+  </button>
+
+          {/* CANCEL - transparent with cyan border */}
+          <button
+    onClick={onClose}
+    disabled={loading}
+    className="btn--outline"
+    style={{
+      border: "1px solid #00bfff",
+      padding: "0.7em 1.6em",
+      borderRadius: "12px",
+      background: "transparent",
+      color: "#00bfff",
+      fontWeight: "600",
+      cursor: "pointer",
+      minWidth: "120px"
+    }}
+  >
+    CANCEL
+  </button>
+        </div>
+        {/* === end replaced buttons === */}
+
       </div>
-
-      {token.sold >= limit || token.raised >= target ? (
-        <p className="disclaimer">target reached!</p>
-      ) : (
-        <form action={buyHandler}>
-          <input type="number" name="amount" min={1} max={10000} placeholder="1" />
-          <input type="submit" value="[ buy ]" />
-        </form>
-      )
-      }
-
-      <button onClick={toggleTrade} className="btn--fancy">[ cancel ]</button>
-    </div >
+    </div>
   );
 }
-
-export default Trade;

@@ -1,7 +1,12 @@
 {
-    "31337": {
-        "factory": {
-            "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-        }
+  "11155111": {
+    "factory": {
+      "address": "0xa8461707fcd642efce7d83e121a0ce059a671808"
     }
+  },
+  "8453": {
+    "factory": {
+      "address": "0x7e43d21E5dCbcA9D11Bc37BcB7CDeb62d6D3bF3a"
+    }
+  }
 }
