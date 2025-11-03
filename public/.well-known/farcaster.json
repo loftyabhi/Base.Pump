@@ -2,17 +2,17 @@
   "frame": {
     "name": "Sarkari Tool",
     "version": "1",
-    "iconUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/icon.png",
-    "homeUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/",
-    "imageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/icon.jpg",
+    "iconUrl": "https://basepump.vercel.app/icon.png",
+    "homeUrl": "https://basepump.vercel.app/",
+    "imageUrl": "https://basepump.vercel.app/icon.jpg",
     "buttonTitle": "Create MEMES",
-    "splashImageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/icon.png",
+    "splashImageUrl": "https://basepump.vercel.app/icon.png",
     "splashBackgroundColor": "#ffffff",
-    "webhookUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/webhook",
+    "webhookUrl": "https://basepump.vercel.app/webhook",
     "subtitle": "web2 utility now on web3",
     "description": "Your one stop soluction for everyday utility",
     "screenshotUrls": [
-      "https://suggesting-residential-necklace-face.trycloudflare.com/og.png"
+      "https://basepump.vercel.app/og.png"
     ],
     "primaryCategory": "utility",
     "tags": [
@@ -22,12 +22,12 @@
       "image",
       "work"
     ],
-    "heroImageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/og.png",
+    "heroImageUrl": "https://basepump.vercel.app/og.png",
     "tagline": "Useful Tools to make life easy",
     "ogTitle": "Sarkari Tool",
     "ogDescription": "All in one utility tool",
-    "ogImageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/og.png",
-    "castShareUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/share"
+    "ogImageUrl": "https://basepump.vercel.app/og.png",
+    "castShareUrl": "https://basepump.vercel.app/share"
   },
   "accountAssociation": {
     "header": "",

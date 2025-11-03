@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
+const projectId = process.env.WALLETCONNECT_PROJECT_ID || "";
 
 const config = createConfig({
   chains: [base, baseSepolia],
