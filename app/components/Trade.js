@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Contract, BrowserProvider, parseEther, formatEther } from "ethers";
-import { showSuccess, showError } from "@/app/utils/toastUtils";
-import factoryArtifact from "@/app/abis/Factory.json";
-import config from "@/app/config.json";
-import { useRouter } from "next/navigation";
+import { useWalletClient, usePublicClient } from "wagmi";
+import { parseEther, formatEther } from "viem";
+import { showSuccess, showError, showLoading, dismissToasts } from "@/app/utils/toastUtils";
 
 export default function Trade({ token, factory, onClose }) {
-  const router = useRouter();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
+  
   const [amount, setAmount] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [loading, setLoading] = useState(false);
@@ -16,49 +16,33 @@ export default function Trade({ token, factory, onClose }) {
 
   const tokenAddress = token?.token ?? token?.tokenAddress ?? token?.address;
 
-  async function buildFactoryContract(signerOrProvider) {
-    if (factory?.contract) return factory.contract.connect(signerOrProvider);
-    if (factory?.address && factory?.abi) return new Contract(factory.address, factory.abi, signerOrProvider);
-
-    if (factoryArtifact.address) return new Contract(factoryArtifact.address, factoryArtifact.abi, signerOrProvider);
-
-    const ethereum = window.ethereum;
-    if (!ethereum) return null;
-    const provider = new BrowserProvider(ethereum);
-    const net = await provider.getNetwork();
-    const chainId = Number(net.chainId);
-
-    if (config?.[chainId]?.factory?.address) {
-      return new Contract(config[chainId].factory.address, factoryArtifact.abi, signerOrProvider);
-    }
-    return null;
-  }
-
   useEffect(() => {
     const computeCost = async () => {
-      if (!amount || Number(amount) <= 0) return setEstimatedCost("");
+      if (!amount || Number(amount) <= 0) {
+        setEstimatedCost("");
+        return;
+      }
 
       try {
-        const ethereum = window.ethereum;
-        if (!ethereum) return;
+        if (!publicClient || !factory?.contract) return;
 
-        const provider = new BrowserProvider(ethereum);
-        const factoryContract = await buildFactoryContract(provider);
-        if (!factoryContract) return;
-
-        const sale = await factoryContract.tokenToSale(tokenAddress);
-        const sold = sale?.sold ?? sale?.[3] ?? sale?.[2];
-        const costPerToken = await factoryContract.getCost(sold);
-
+        const sale = await factory.contract.read.tokenToSale([tokenAddress]);
+        const sold = sale[3]; // sold is at index 3
+        
+        const costPerToken = await factory.contract.read.getCost([sold]);
         const amountWei = parseEther(String(amount));
-        const totalCost = (BigInt(costPerToken) * BigInt(amountWei)) / 10n ** 18n;
-        setEstimatedCost(formatEther(totalCost.toString()));
-      } catch {
+        
+        const totalCost = (costPerToken * amountWei) / parseEther("1");
+        setEstimatedCost(formatEther(totalCost));
+        
+      } catch (err) {
+        console.error("Cost calculation error:", err);
         setEstimatedCost("");
       }
     };
+    
     computeCost();
-  }, [amount, tokenAddress]);
+  }, [amount, tokenAddress, publicClient, factory]);
 
   const closeModal = () => {
     setClosing(true);
@@ -67,58 +51,59 @@ export default function Trade({ token, factory, onClose }) {
     }, 250);
   };
 
-  // BUY HANDLER (final)
   const buyHandler = async (e) => {
     e.preventDefault();
 
     if (!amount || Number(amount) <= 0) return showError("ENTER A VALID TOKEN AMOUNT");
     if (!tokenAddress) return showError("INVALID TOKEN");
+    if (!walletClient || !publicClient) return showError("WALLET NOT CONNECTED");
 
     setLoading(true);
 
     try {
-      const ethereum = window.ethereum;
-      if (!ethereum) throw new Error("NO WALLET");
-
-      const provider = new BrowserProvider(ethereum);
-      const signer = await provider.getSigner();
-      const factoryContract = await buildFactoryContract(signer);
-
-      const sale = await factoryContract.tokenToSale(tokenAddress);
-      const sold = sale?.sold ?? sale?.[3] ?? sale?.[2];
-      const costPerToken = await factoryContract.getCost(sold);
+      const sale = await factory.contract.read.tokenToSale([tokenAddress]);
+      const sold = sale[3];
+      const costPerToken = await factory.contract.read.getCost([sold]);
 
       const amountWei = parseEther(String(amount));
-      const totalCost = (BigInt(costPerToken) * BigInt(amountWei)) / 10n ** 18n;
+      const totalCost = (costPerToken * amountWei) / parseEther("1");
 
-      const tx = await factoryContract.buy(tokenAddress, amountWei, { value: totalCost });
+      showLoading("SENDING TRANSACTION...");
 
-      showSuccess("✅ Transaction Sent... Waiting...");
-      await tx.wait();
+      const hash = await walletClient.writeContract({
+        address: factory.address,
+        abi: factory.abi,
+        functionName: "buy",
+        args: [tokenAddress, amountWei],
+        value: totalCost,
+      });
 
-      showSuccess("✅ Purchase Successful!");
+      showLoading("WAITING FOR CONFIRMATION...");
+      await publicClient.waitForTransactionReceipt({ hash });
 
-      // fade close
+      dismissToasts();
+      showSuccess("✅ PURCHASE SUCCESSFUL!");
+
       setClosing(true);
-
       setTimeout(() => {
         onClose?.();
-        router.refresh();
       }, 350);
 
     } catch (err) {
       console.error("BUY ERROR:", err);
+      dismissToasts();
 
-      let msg = err?.reason || err?.error?.message || err?.message || "";
-
-      if (err?.code === 4001 || msg.toLowerCase().includes("user denied"))
-        return showError("❌ Transaction Cancelled");
+      let msg = err?.message || "";
+      
+      if (err?.message?.includes("User rejected") || msg.toLowerCase().includes("user denied")) {
+        return showError("❌ TRANSACTION CANCELLED");
+      }
 
       msg = msg.replace("Factory: ", "");
-      showError(`⚠️ ${msg || "Transaction Failed"}`);
+      showError(`⚠️ ${msg || "TRANSACTION FAILED"}`);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -133,8 +118,10 @@ export default function Trade({ token, factory, onClose }) {
         zIndex: 99999,
         transition: "background 0.25s ease"
       }}
+      onClick={closeModal}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           width: 720,
           maxWidth: "96vw",
@@ -150,10 +137,19 @@ export default function Trade({ token, factory, onClose }) {
         }}
       >
         <h2>BUY TOKEN</h2>
-        <p style={{ opacity: 0.85 }}>{token?.name}</p>
+        <p style={{ opacity: 0.85 }}>{token?.name || "Unknown Token"}</p>
 
         {token?.image && (
-          <img src={token.image} width="180" height="180" style={{ margin: "12px auto", border: "1px solid #00aaff" }} />
+          <img 
+            src={token.image} 
+            alt="Token" 
+            width="180" 
+            height="180" 
+            style={{ margin: "12px auto", border: "1px solid #00aaff", borderRadius: "8px" }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
         )}
 
         <input
@@ -163,48 +159,54 @@ export default function Trade({ token, factory, onClose }) {
           placeholder="TOKEN AMOUNT"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          style={{ width: "80%", padding: 10, background: "#050505", color: "#fff", border: "1px solid #00aaff", borderRadius: 6 }}
+          style={{ 
+            width: "80%", 
+            padding: 10, 
+            background: "#050505", 
+            color: "#fff", 
+            border: "1px solid #00aaff", 
+            borderRadius: 6,
+            fontSize: "1rem"
+          }}
         />
 
-        <p style={{ marginTop: 10 }}>{estimatedCost ? `Estimated Cost: ${estimatedCost} ETH` : " "}</p>
+        <p style={{ marginTop: 10, minHeight: "24px" }}>
+          {estimatedCost ? `ESTIMATED COST: ${estimatedCost} ETH` : " "}
+        </p>
 
-        {/* === REPLACED BUTTONS (only these two changed) === */}
         <div className="buttons" style={{ display: "flex", justifyContent: "center", gap: "1rem", marginTop: "1.2rem" }}>
-          {/* BUY - filled bright blue, rounded, white text */}
           <button
-    onClick={buyHandler}
-    disabled={loading}
-    className="btn--fancy"
-    style={{
-      opacity: loading ? 0.6 : 1,
-      cursor: loading ? "not-allowed" : "pointer",
-      minWidth: "120px"
-    }}
-  >
-    {loading ? "PROCESSING..." : "BUY"}
-  </button>
+            onClick={buyHandler}
+            disabled={loading}
+            className="btn--fancy"
+            style={{
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+              minWidth: "120px"
+            }}
+          >
+            {loading ? "PROCESSING..." : "BUY"}
+          </button>
 
-          {/* CANCEL - transparent with cyan border */}
           <button
-    onClick={onClose}
-    disabled={loading}
-    className="btn--outline"
-    style={{
-      border: "1px solid #00bfff",
-      padding: "0.7em 1.6em",
-      borderRadius: "12px",
-      background: "transparent",
-      color: "#00bfff",
-      fontWeight: "600",
-      cursor: "pointer",
-      minWidth: "120px"
-    }}
-  >
-    CANCEL
-  </button>
+            onClick={closeModal}
+            disabled={loading}
+            className="btn--outline"
+            style={{
+              border: "1px solid #00bfff",
+              padding: "0.7em 1.6em",
+              borderRadius: "12px",
+              background: "transparent",
+              color: "#00bfff",
+              fontWeight: "600",
+              cursor: loading ? "not-allowed" : "pointer",
+              minWidth: "120px",
+              opacity: loading ? 0.6 : 1,
+            }}
+          >
+            CANCEL
+          </button>
         </div>
-        {/* === end replaced buttons === */}
-
       </div>
     </div>
   );

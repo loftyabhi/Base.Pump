@@ -1,0 +1,37 @@
+{
+  "frame": {
+    "name": "Sarkari Tool",
+    "version": "1",
+    "iconUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/icon.png",
+    "homeUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/",
+    "imageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/icon.jpg",
+    "buttonTitle": "Create MEMES",
+    "splashImageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/icon.png",
+    "splashBackgroundColor": "#ffffff",
+    "webhookUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/webhook",
+    "subtitle": "web2 utility now on web3",
+    "description": "Your one stop soluction for everyday utility",
+    "screenshotUrls": [
+      "https://suggesting-residential-necklace-face.trycloudflare.com/og.png"
+    ],
+    "primaryCategory": "utility",
+    "tags": [
+      "utility",
+      "tools",
+      "productivity",
+      "image",
+      "work"
+    ],
+    "heroImageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/og.png",
+    "tagline": "Useful Tools to make life easy",
+    "ogTitle": "Sarkari Tool",
+    "ogDescription": "All in one utility tool",
+    "ogImageUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/og.png",
+    "castShareUrl": "https://suggesting-residential-necklace-face.trycloudflare.com/share"
+  },
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  }
+}
