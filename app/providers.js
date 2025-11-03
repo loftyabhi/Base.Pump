@@ -68,7 +68,7 @@ export function Providers({ children }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
-          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
+          apiKey={process.env.ONCHAINKIT_API_KEY}
           chain={base}
           config={{
             farcaster: { enabled: isInFrame },
