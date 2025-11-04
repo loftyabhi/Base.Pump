@@ -1,9 +1,18 @@
-export const runtime = "nodejs";
+export const runtime = "nodejs"; // ensures server runtime on Vercel
 import { NextResponse } from "next/server";
+
+// Simple GET test to make sure route is registered
+export async function GET() {
+  return NextResponse.json({ status: "✅ generate-image route active" });
+}
 
 export async function POST(req) {
   try {
     const { prompt } = await req.json();
+
+    if (!prompt) {
+      return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
+    }
 
     if (!process.env.HF_API_KEY) {
       console.error("❌ Missing HF_API_KEY");
