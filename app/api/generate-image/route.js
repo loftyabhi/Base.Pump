@@ -1,7 +1,7 @@
 export const runtime = "nodejs"; // ensures server runtime on Vercel
 import { NextResponse } from "next/server";
 
-// Simple GET test to make sure route is registered
+// Test route
 export async function GET() {
   return NextResponse.json({ status: "✅ generate-image route active" });
 }
@@ -22,6 +22,7 @@ export async function POST(req) {
       );
     }
 
+    // ✅ Official router endpoint (required since November 2024)
     const res = await fetch(
       "https://router.huggingface.co/hf-inference/models/prompthero/openjourney-v4",
       {
@@ -32,7 +33,11 @@ export async function POST(req) {
         },
         body: JSON.stringify({
           inputs: prompt,
-          parameters: { width: 512, height: 512, num_inference_steps: 25 },
+          parameters: {
+            width: 512,
+            height: 512,
+            num_inference_steps: 25,
+          },
         }),
       }
     );
