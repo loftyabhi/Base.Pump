@@ -1,22 +1,22 @@
-import fs from "fs/promises";
-import path from "path";
-
-export async function getImages() {
-  const jsonPath = path.resolve(process.cwd(), "app/images.json");
-
-  // 1️⃣ Load current local images.json
-  let localImages = [];
+export async function getImages(prompt) {
   try {
-    const file = await fs.readFile(jsonPath, "utf8");
-    localImages = JSON.parse(file);
-  } catch {
-    console.warn("⚠️ No existing images.json found — starting fresh");
+    // ✅ Load static images from /app/images.json
+    const localImages = (await import("@/app/images.json")).default;
+
+    if (Array.isArray(localImages) && localImages.length > 0) {
+      console.log("✅ Loaded images from /app/images.json");
+      return localImages;
+    }
+
+    throw new Error("Empty image list");
+  } catch (err) {
+    console.warn("⚠️ Local image load failed:", err.message);
   }
 
-  // 2️⃣ Try fetching pinned images from Pinata
+  // 1️⃣ Try loading from Pinata Cloud
   try {
     const res = await fetch(
-      "https://api.pinata.cloud/data/pinList?status=pinned&pageLimit=100",
+      "https://api.pinata.cloud/data/pinList?status=pinned&pageLimit=50",
       {
         headers: {
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`,
@@ -25,51 +25,53 @@ export async function getImages() {
       }
     );
 
-    if (!res.ok) throw new Error(`Pinata API error: ${res.status}`);
+    if (!res.ok) throw new Error(`Pinata request failed: ${res.statusText}`);
 
     const data = await res.json();
+    const pinataImages = (data.rows || [])
+      .filter((f) => f.ipfs_pin_hash)
+      .map((f) => `https://pump.mypinata.cloud/ipfs/${f.ipfs_pin_hash}`);
 
-    const pinataImages =
-      data?.rows
-        ?.filter((f) => f?.metadata?.name?.toLowerCase()?.includes("basepump"))
-        ?.map((f) => `https://pump.mypinata.cloud/ipfs/${f.ipfs_pin_hash}`) || [];
-
-    // 3️⃣ If Pinata returned new images, merge and update local JSON
     if (pinataImages.length > 0) {
-      const newOnes = pinataImages.filter((url) => !localImages.includes(url));
-
-      if (newOnes.length > 0) {
-        const updatedList = [...newOnes, ...localImages].slice(0, 100); // keep max 100
-        await fs.writeFile(
-          jsonPath,
-          JSON.stringify(updatedList, null, 2),
-          "utf8"
-        );
-        console.log(`✅ Added ${newOnes.length} new images to images.json`);
-        return updatedList;
-      }
-
-      console.log("✅ All Pinata images already in images.json");
-      return localImages.length ? localImages : pinataImages;
+      console.log("✅ Loaded images dynamically from Pinata");
+      return pinataImages;
     }
 
-    throw new Error("No BasePump images found on Pinata");
-  } catch (err) {
-    console.warn("⚠️ Falling back — Pinata fetch failed:", err.message);
-
-    // 4️⃣ Fallback — generate placeholder images (25 unique)
-    const fallbackImages = Array.from({ length: 25 }).map(
-      (_, i) => `https://picsum.photos/seed/basepump_${i}/600/600`
-    );
-
-    // If local JSON has images, use them first
-    if (localImages.length > 0) {
-      console.log("✅ Using existing images.json as fallback");
-      return localImages;
-    }
-
-    // Write fallback to file (optional)
-    await fs.writeFile(jsonPath, JSON.stringify(fallbackImages, null, 2), "utf8");
-    return fallbackImages;
+    throw new Error("No valid images from Pinata");
+  } catch (pinErr) {
+    console.warn("⚠️ Pinata fetch failed:", pinErr.message);
   }
+
+  // 2️⃣ Hugging Face AI fallback — via server route to avoid CORS
+try {
+  if (prompt) {
+    console.log("🤖 Generating AI image via server proxy...");
+
+    const res = await fetch("/api/generate-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: `A futuristic token logo for ${prompt}, holographic glowing Base theme`,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Server-side generation failed");
+
+    const data = await res.json();
+    if (data.imageUrl) {
+      console.log("✅ AI-generated image ready:", prompt);
+      return [data.imageUrl];
+    }
+  }
+} catch (hfErr) {
+  console.warn("⚠️ AI generation failed, using fallback:", hfErr.message);
+}
+
+  
+
+  // 3️⃣ Final fallback — random placeholders
+  console.log("⚙️ Using fallback placeholder images...");
+  return Array.from({ length: 25 }).map(
+    (_, i) => `https://picsum.photos/seed/basepump_${i}/600/600`
+  );
 }
