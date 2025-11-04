@@ -3,36 +3,50 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const { prompt } = await req.json();
-    if (!prompt) {
-      return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
+
+    if (!process.env.HF_API_KEY) {
+      console.error("❌ Missing HF_API_KEY");
+      return NextResponse.json(
+        { error: "Missing Hugging Face API Key" },
+        { status: 500 }
+      );
     }
 
-    const hfRes = await fetch(
-      "https://api-inference.huggingface.co/models/prompthero/openjourney-v4",
+    const res = await fetch(
+      "https://router.huggingface.co/hf-inference/models/prompthero/openjourney-v4",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_HF_API_KEY}`,
+          Authorization: `Bearer ${process.env.HF_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ inputs: prompt }),
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: {
+            width: 512,
+            height: 512,
+            num_inference_steps: 25,
+          },
+        }),
       }
     );
 
-    if (!hfRes.ok) {
-      const text = await hfRes.text();
-      console.error("HF API failed:", text);
-      return NextResponse.json({ error: "HF API Error" }, { status: 500 });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error("HF API failed:", errText);
+      return NextResponse.json(
+        { error: "Hugging Face request failed", details: errText },
+        { status: res.status }
+      );
     }
 
-    // Convert blob to base64 for frontend display
-    const arrayBuffer = await hfRes.arrayBuffer();
-    const base64Image = Buffer.from(arrayBuffer).toString("base64");
-    const imageUrl = `data:image/png;base64,${base64Image}`;
+    const arrayBuffer = await res.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const dataUrl = `data:image/png;base64,${base64}`;
 
-    return NextResponse.json({ imageUrl });
-  } catch (err) {
-    console.error("Error generating image:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ image: dataUrl });
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
