@@ -44,9 +44,12 @@ export async function POST(req) {
     const base64 = Buffer.from(arrayBuffer).toString("base64");
     const dataUrl = `data:image/png;base64,${base64}`;
 
-    return NextResponse.json({ image: dataUrl });
+    return NextResponse.json({ image: dataUrl }, { status: 200 });
   } catch (error) {
     console.error("Unexpected error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Unknown error" },
+      { status: 500 }
+    );
   }
 }

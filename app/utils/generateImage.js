@@ -37,8 +37,9 @@ export async function generateImage(prompt) {
     });
 
     const uploadData = await uploadRes.json();
-    if (!uploadRes.ok) throw new Error("Pinata upload failed");
-    const imageUrl = `https://pump.mypinata.cloud/ipfs/${uploadData.IpfsHash}`;
+if (!uploadRes.ok || !uploadData.IpfsHash) throw new Error("Pinata upload failed");
+const imageUrl = `https://pump.mypinata.cloud/ipfs/${uploadData.IpfsHash}`;
+
     return imageUrl;
   } catch (err) {
     console.error("AI image generation failed:", err.message);

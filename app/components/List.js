@@ -28,9 +28,8 @@ export default function List({ toggleCreate, factory, fee }) {
 
       if (!res.ok) throw new Error("Hugging Face proxy failed");
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      return url;
+      const { image } = await res.json();
+      return image;
     } catch (error) {
       console.warn("⚠️ Hugging Face failed, using fallback image:", error);
       return `https://picsum.photos/seed/${encodeURIComponent(prompt)}/600/600`;
