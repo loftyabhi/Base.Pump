@@ -4,9 +4,7 @@ import path from "path";
 export async function POST(req) {
   try {
     const { image } = await req.json();
-    if (!image) {
-      return new Response("Missing image", { status: 400 });
-    }
+    if (!image) return new Response("Missing image", { status: 400 });
 
     const filePath = path.join(process.cwd(), "app/images.json");
     const existing = fs.existsSync(filePath)
