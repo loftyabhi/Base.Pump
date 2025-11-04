@@ -11,9 +11,30 @@ import Token from "./components/Token";
 import Trade from "./components/Trade";
 
 import Factory from "./abis/Factory.json";
-import images from "./images.json";
-
+import { getImages } from "@/app/utils/getImages";
 import { showSuccess, showError, showInfo } from "@/app/utils/toastUtils";
+
+// ✅ safer async image loader
+let images = [];
+try {
+  images = await getImages();
+  if (!Array.isArray(images) || images.length === 0) {
+    console.warn("⚠️ No images fetched — using static backup list");
+    images = [
+      "https://pump.mypinata.cloud/ipfs/QmZ4ea3mwmzwVwyWnhzs35hyxw4VryyJWB82TknGY3L5wbxn",
+      "https://pump.mypinata.cloud/ipfs/QmfFEk9pzFzTmcDjHLXi5H6E5dKn8NjneaT5ZN2yenfUR",
+      "https://pump.mypinata.cloud/ipfs/QmdwMz7LDs42JoUx1E9fYwjjRwj9d1E1iR8HGbDC4EdTvtY",
+    ];
+  }
+} catch (err) {
+  console.error("❌ getImages() failed:", err);
+  images = [
+    "https://pump.mypinata.cloud/ipfs/QmZ4ea3mwmzwVwyWnhzs35hyxw4VryyJWB82TknGY3L5wbxn",
+    "https://pump.mypinata.cloud/ipfs/QmfFEk9pzFzTmcDjHLXi5H6E5dKn8NjneaT5ZN2yenfUR",
+    "https://pump.mypinata.cloud/ipfs/QmdwMz7LDs42JoUx1E9fYwjjRwj9d1E1iR8HGbDC4EdTvtY",
+  ];
+}
+
 
 // Your actual deployed contract addresses
 const FACTORY_ADDRESSES = {
