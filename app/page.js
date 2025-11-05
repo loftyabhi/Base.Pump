@@ -165,8 +165,8 @@ export default function Home() {
   async function switchNetwork() {
     try {
       if (walletClient) {
-        await walletClient.switchChain({ id: baseSepolia.id });
-        showSuccess("SWITCHED TO BASE SEPOLIA");
+        await walletClient.switchChain({ id: base.id });
+        showSuccess("SWITCHED TO BASE");
       }
     } catch (err) {
       console.error(err);
@@ -194,7 +194,7 @@ export default function Home() {
             {isLoading
               ? "LOADING..."
               : !factory
-              ? "SWITCH TO BASE SEPOLIA"
+              ? "SWITCH TO BASE"
               : !isConnected
               ? "CONNECT WALLET"
               : "CREATE NEW TOKEN"}

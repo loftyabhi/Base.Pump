@@ -1,45 +1,48 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
-    const event = await req.json();
-    console.log("🔔 Webhook Event:", event);
-
-    const { fid, notificationDetails } = event;
-    const token = notificationDetails?.token;
-    const url = notificationDetails?.url;
-
-    switch (event.event) {
-      case "notifications_enabled":
-      case "miniapp_added": {
-        if (!fid || !token || !url) break;
-
-        const { error } = await supabase
-          .from("user_tokens")
-          .upsert({ fid, token, url }, { onConflict: "fid" });
-
-        if (error) console.error("❌ Upsert error:", error);
-        else console.log(`✅ Notifications enabled for FID ${fid}`);
-        break;
-      }
-
-      case "notifications_disabled":
-      case "miniapp_removed": {
-        if (fid) {
-          await supabase.from("user_tokens").delete().eq("fid", fid);
-          console.log(`❌ Notifications disabled for FID ${fid}`);
-        }
-        break;
-      }
-
-      default:
-        console.log("⚙️ Unhandled event type:", event.event);
+    const signature = req.headers.get("x-neynar-signature-256");
+    if (!signature) {
+      return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
 
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error("💥 Webhook error:", error);
+    const bodyText = await req.text();
+    const computed = crypto
+      .createHmac("sha256", process.env.NEYNAR_WEBHOOK_SECRET!)
+      .update(bodyText)
+      .digest("hex");
+
+    if (computed !== signature) {
+      console.warn("❌ Invalid Neynar signature");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
+
+    const body = JSON.parse(bodyText);
+
+    // ✅ Example: handle event types
+    switch (body.type) {
+      case "cast.created":
+        console.log(
+          `🟣 New cast: ${body.data.cast.text} (by ${body.data.cast.author.username})`
+        );
+        break;
+      case "reaction.added":
+        console.log(`💜 Reaction: ${body.data.reaction.type}`);
+        break;
+      case "user.followed":
+        console.log(
+          `👥 ${body.data.source.username} followed ${body.data.target.username}`
+        );
+        break;
+      default:
+        console.log("📦 Unhandled event:", body.type);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Webhook error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

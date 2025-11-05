@@ -1,33 +1,34 @@
 {
   "frame": {
-    "name": "Sarkari Tool",
+    "name": "Base Pump",
     "version": "1",
     "iconUrl": "https://basepump.vercel.app/icon.png",
-    "homeUrl": "https://basepump.vercel.app/",
-    "imageUrl": "https://basepump.vercel.app/icon.jpg",
-    "buttonTitle": "Create MEMES",
-    "splashImageUrl": "https://basepump.vercel.app/icon.png",
+    "homeUrl": "https://basepump.vercel.app",
+    "imageUrl": "https://basepump.vercel.app/og.png",
+    "buttonTitle": "Create Now",
+    "splashImageUrl": "https://basepump.vercel.app/siu.png",
     "splashBackgroundColor": "#ffffff",
     "webhookUrl": "https://basepump.vercel.app/api/farcaster/webhook",
-    "subtitle": "web2 utility now on web3",
-    "description": "Your one stop soluction for everyday utility",
+    "subtitle": "Create Your MEME Now",
+    "description": "Only Memes no Value have Fun Share and Enjoy",
     "screenshotUrls": [
-      "https://basepump.vercel.app/og.png"
+      "https://basepump.vercel.app/ss1.png",
+      "https://basepump.vercel.app/ss1.png",
+      "https://basepump.vercel.app/ss1.png"
     ],
-    "primaryCategory": "utility",
+    "primaryCategory": "finance",
     "tags": [
-      "utility",
-      "tools",
-      "productivity",
-      "image",
-      "work"
+      "meme",
+      "coin",
+      "fun",
+      "finance",
+      "ai"
     ],
     "heroImageUrl": "https://basepump.vercel.app/og.png",
-    "tagline": "Useful Tools to make life easy",
-    "ogTitle": "Sarkari Tool",
-    "ogDescription": "All in one utility tool",
-    "ogImageUrl": "https://basepump.vercel.app/og.png",
-    "castShareUrl": "https://basepump.vercel.app/share"
+    "tagline": "pepe, satoshi, meme, cz, trump",
+    "ogTitle": "BasePump-Your Own MEME Creator",
+    "ogDescription": "Create Your Own MEME Easily",
+    "ogImageUrl": "https://basepump.vercel.app/og.png"
   },
   "accountAssociation": {
     "header": "",

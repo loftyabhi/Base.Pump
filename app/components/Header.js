@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useAccount, useConnect, useDisconnect, useConnectors } from "wagmi";
+import { useAccount, useConnect, useDisconnect } from "wagmi";
 import {
   Wallet,
   WalletDropdown,
   WalletDropdownDisconnect,
 } from "@coinbase/onchainkit/wallet";
-import { Avatar, Name, Address, EthBalance } from "@coinbase/onchainkit/identity";
+import {
+  Avatar,
+  Name,
+  Address,
+  EthBalance,
+} from "@coinbase/onchainkit/identity";
 import sdk from "@farcaster/miniapp-sdk";
 
 export default function Header() {
@@ -27,22 +32,21 @@ export default function Header() {
   useEffect(() => {
     const checkFrame = async () => {
       try {
-        const context = await sdk.context;
+        const context = await sdk.context(); // ✅ Correct: sdk.context() is a function
         if (context?.user?.fid) {
           setIsInFrame(true);
 
-          // Fetch Farcaster profile through secure API
-          fetch(`/api/farcaster-profile?fid=${context.user.fid}`)
-            .then((res) => res.json())
-            .then((data) => {
-              if (data?.username) setFarcasterProfile(data);
-            })
-            .catch((err) => console.error("Profile fetch failed:", err));
+          // Fetch Farcaster profile through your API
+          const res = await fetch(`/api/farcaster-profile?fid=${context.user.fid}`);
+          const data = await res.json();
+          if (data) setFarcasterProfile(data);
         }
-      } catch {
+      } catch (err) {
+        console.error("Error detecting Farcaster frame:", err);
         setIsInFrame(false);
       }
     };
+
     checkFrame();
   }, []);
 
@@ -61,8 +65,9 @@ export default function Header() {
       const injected =
         connectors.find((c) => c.id === "metaMask") ||
         connectors.find((c) => c.id === "injected");
+
       if (!injected) {
-        alert("No browser wallet found. Please install MetaMask.");
+        alert("No browser wallet found. Please install MetaMask or Coinbase Wallet.");
         return;
       }
 
@@ -81,34 +86,31 @@ export default function Header() {
       await disconnect();
       setSelectedWallet(null);
       setFarcasterProfile(null);
-
-      // 🔄 Force reset OnchainKit internal wallet session
       window.dispatchEvent(new CustomEvent("onchainkit:disconnect"));
-
-      // Optional full reload (clears all provider cache)
-      window.location.reload();
     } catch (err) {
       console.error("Failed to disconnect:", err);
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <header className="header flex items-center justify-between px-4 py-3 border-b border-gray-800">
-      {/* Logo */}
-      <h1 className="logo text-blue-400 font-bold text-xl">BASEPUMP</h1>
+       {/* Logo */} 
+       <h1 className="logo text-blue-400 font-bold text-xl">BASEPUMP</h1>
 
       {/* Farcaster MiniApp indicator */}
-      {mounted && isInFrame && (
+      {isInFrame && (
         <div className="flex items-center text-sm opacity-80 mr-auto ml-4">
           🔵 Farcaster Mini App
         </div>
       )}
 
-      {/* Farcaster Profile (PFP + username) */}
+      {/* Farcaster Profile */}
       {farcasterProfile && (
         <div className="flex items-center gap-2 mr-4">
           <img
-            src={farcasterProfile.pfp_url}
+            src={farcasterProfile.pfp?.url || "/default-avatar.png"}
             alt="Farcaster avatar"
             className="h-8 w-8 rounded-full border border-gray-700"
           />
@@ -125,17 +127,15 @@ export default function Header() {
             <button
               onClick={handleConnect}
               disabled={isConnecting}
-              className="btn--fancy"
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white font-medium"
             >
               {isConnecting ? "CONNECTING..." : "CONNECT WALLET"}
             </button>
           ) : (
             <div className="flex items-center space-x-2">
-              <div className="connected-info px-3 py-1 rounded-lg bg-[#111] text-sm text-blue-300">
-                CONNECTED IN {" "}
-                {selectedWallet === "Farcaster"
-                  ? "FARCASTER"
-                  : "BROWSER"}
+              <div className="px-3 py-1 rounded-lg bg-[#111] text-sm text-blue-300">
+                CONNECTED IN{" "}
+                {selectedWallet === "Farcaster" ? "FARCASTER" : "BROWSER"}
               </div>
               <WalletDropdown>
                 <div className="px-4 pt-3 pb-2">
@@ -144,13 +144,12 @@ export default function Header() {
                   <Address />
                   <EthBalance />
                 </div>
-                {/* ✅ disconnect button now fully works */}
                 <WalletDropdownDisconnect onClick={handleDisconnect} />
               </WalletDropdown>
             </div>
           )}
           {/* Hidden OnchainKit trigger */}
-          <button ref={connectRef} className="hidden" data-onchainkit-connect />
+          <button ref={connectRef} className="relative" data-onchainkit-connect />
         </Wallet>
       </div>
     </header>

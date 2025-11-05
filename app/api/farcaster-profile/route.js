@@ -16,21 +16,34 @@ export async function GET(req) {
           accept: "application/json",
           "x-api-key": process.env.NEYNAR_API_KEY,
         },
+        cache: "no-store", // ensures fresh data
       }
     );
 
+    if (!res.ok) {
+      console.error("Neynar API failed:", await res.text());
+      return NextResponse.json({ error: "Neynar API failed" }, { status: res.status });
+    }
+
     const data = await res.json();
-    const user = data.result?.users?.[0];
-    if (!user) return NextResponse.json({}, { status: 404 });
+    const user = data?.users?.[0] || data?.result?.users?.[0];
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
     return NextResponse.json({
       fid: user.fid,
       username: user.username,
       display_name: user.display_name,
-      pfp_url: user.pfp_url,
+      bio: user.profile?.bio?.text || null,
+      pfp: { url: user.pfp?.url || null }, // ✅ matches frontend key: farcasterProfile.pfp?.url
     });
   } catch (err) {
     console.error("Farcaster API error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
