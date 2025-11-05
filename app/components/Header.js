@@ -14,6 +14,7 @@ import {
   EthBalance,
 } from "@coinbase/onchainkit/identity";
 import sdk from "@farcaster/miniapp-sdk";
+import { trackEvent } from "@/lib/analytics";
 
 export default function Header() {
   const [isInFrame, setIsInFrame] = useState(false);
@@ -49,6 +50,26 @@ export default function Header() {
 
     checkFrame();
   }, []);
+
+  useEffect(() => {
+  const detectFarcaster = async () => {
+    try {
+      const ctx = await sdk.context();
+      if (ctx?.user?.fid) {
+        trackEvent("miniapp_open", {
+          fid: ctx.user.fid,
+          username: ctx.user.username || "unknown",
+          source: "warpcast",
+        });
+      } else {
+        trackEvent("miniapp_open", { source: "browser" });
+      }
+    } catch {
+      trackEvent("miniapp_open", { source: "unknown" });
+    }
+  };
+  detectFarcaster();
+}, []);
 
   useEffect(() => setMounted(true), []);
 
