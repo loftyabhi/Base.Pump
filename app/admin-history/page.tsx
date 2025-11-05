@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
 type NotificationLog = {
@@ -6,7 +8,7 @@ type NotificationLog = {
   body: string;
   target_url: string;
   created_at: string;
-  tokens: string[];
+  token_count?: number;
   response: any;
 };
 
@@ -19,8 +21,12 @@ export default function AdminHistoryPage() {
     try {
       const res = await fetch("/api/get-history");
       const data = await res.json();
-      if (res.ok) setLogs(data.logs);
-      else setError(data.error || "Failed to fetch logs");
+      if (res.ok) {
+        setLogs(data.logs || []);
+        setError("");
+      } else {
+        setError(data.error || "Failed to fetch logs");
+      }
     } catch (err) {
       console.error(err);
       setError("Error loading history");
@@ -60,7 +66,7 @@ export default function AdminHistoryPage() {
 
               <div className="meta">
                 <span>🎯 <b>Target:</b> {log.target_url}</span>
-                <span>👥 <b>Tokens:</b> {log.tokens?.length || 0}</span>
+                <span>👥 <b>Tokens Sent:</b> {log.token_count || 0}</span>
               </div>
 
               <div className="response">

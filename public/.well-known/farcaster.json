@@ -8,7 +8,7 @@
     "buttonTitle": "Create Now",
     "splashImageUrl": "https://basepump.vercel.app/siu.png",
     "splashBackgroundColor": "#ffffff",
-    "webhookUrl": "https://basepump.vercel.app/api/farcaster/webhook",
+    "webhookUrl": "https://api.neynar.com/f/app/036fc000-6689-4833-86f0-8a46b7619e77/event",
     "subtitle": "Create Your MEME Now",
     "description": "Only Memes no Value have Fun Share and Enjoy",
     "screenshotUrls": [
