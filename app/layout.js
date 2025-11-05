@@ -3,7 +3,7 @@ import "./globals.css";
 import "@coinbase/onchainkit/styles.css";
 import { Toaster } from "react-hot-toast";
 import { Providers } from "./providers";
-import GoogleAnalytics from "@/components/GoogleAnalytics"; // ✅ client-only GA component
+import GoogleAnalytics from "../app/components/GoogleAnalytics"; // ✅ client-only GA component
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const nabla = Nabla({ subsets: ["latin"], variable: "--font-nabla" });

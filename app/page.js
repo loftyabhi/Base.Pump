@@ -38,8 +38,8 @@ try {
 
 // Your actual deployed contract addresses
 const FACTORY_ADDRESSES = {
-  [base.id]: "0x92D721c4BfAA0fC797C9d0Db546b748d6498E600", // Base Mainnet
-  [baseSepolia.id]: "0xD55c2d7c64Ee8272B6E907ED6F1E8197B25F10B8", // Base Sepolia
+  [base.id]: "0x8b60e2c3081e467b4e5d109020d2c48c2f4e64c3", // Base Mainnet
+  [baseSepolia.id]: "0x8f44f9b9e207464509bcb631c4de72c8a4b6280a", // Base Sepolia
 };
 
 export default function Home() {
