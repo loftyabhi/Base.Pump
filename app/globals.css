@@ -255,3 +255,196 @@ main .listings h1 {
   opacity: 0;
   transform: scale(0.96);
 }
+
+/* === Admin History Styles === */
+
+.history-container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 20px;
+  font-family: system-ui, sans-serif;
+  color: #222;
+  background: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+}
+
+.history-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 25px;
+}
+
+.status-msg {
+  text-align: center;
+  color: #666;
+  font-size: 1rem;
+}
+
+.status-msg.error {
+  color: #d9534f;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.history-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px 20px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
+}
+
+.history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-header h2 {
+  font-size: 1.2rem;
+  margin: 0;
+  color: #1e40af;
+}
+
+.history-header .time {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.body {
+  font-size: 1rem;
+  margin: 10px 0;
+  color: #444;
+  line-height: 1.4;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.response {
+  font-size: 0.9rem;
+  background: #f1f3f5;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.refresh-note {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+/* === Admin Page Styles === */
+
+.admin-container {
+  max-width: 600px;
+  margin: 60px auto;
+  padding: 30px 25px;
+  font-family: system-ui, sans-serif;
+  background: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.admin-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 25px;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.admin-form label {
+  font-weight: 500;
+  color: #333;
+}
+
+.admin-form input,
+.admin-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.admin-form input:focus,
+.admin-form textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.admin-form textarea {
+  resize: none;
+}
+
+.admin-form button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.admin-form button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.admin-form button.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.status-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #eef2ff;
+  color: #333;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.status-message::before {
+  content: "💬 ";
+}
+
+.note {
+  margin-top: 25px;
+  color: #777;
+  font-size: 0.85rem;
+}

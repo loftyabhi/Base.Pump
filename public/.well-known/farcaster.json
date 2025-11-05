@@ -8,7 +8,7 @@
     "buttonTitle": "Create MEMES",
     "splashImageUrl": "https://basepump.vercel.app/icon.png",
     "splashBackgroundColor": "#ffffff",
-    "webhookUrl": "https://basepump.vercel.app/webhook",
+    "webhookUrl": "https://basepump.vercel.app/api/farcaster/webhook",
     "subtitle": "web2 utility now on web3",
     "description": "Your one stop soluction for everyday utility",
     "screenshotUrls": [
