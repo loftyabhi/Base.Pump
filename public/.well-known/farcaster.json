@@ -31,8 +31,8 @@
     "ogImageUrl": "https://basepump.vercel.app/og.png"
   },
   "accountAssociation": {
-    "header": "eyJmaWQiOjQ4OTM2MCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGU2ODgwRjk3N2JkNzkwRjI1NTc3QTg4N0Y4NzY5MjU4NDdmYTExRmIifQ",
-    "payload": "eyJkb21haW4iOiJiYXNlcHVtcC52ZXJjZWwuYXBwIn0",
-    "signature": "ys5iNHfNKiw5PyYYpitEr9t5ThSxXO8yImyaYsgzwSxcQQ5/KhJOt+E5IAb+2IYSEA/0x0WBWO78M5kNfWINZBs="
+    "header": "process.env.NEXT_PUBLIC_FARCASTER_HEADER",
+    "payload": "process.env.NEXT_PUBLIC_FARCASTER_PAYLOAD",
+    "signature": "process.env.NEXT_PUBLIC_FARCASTER_SIGNATURE"
   }
 }
