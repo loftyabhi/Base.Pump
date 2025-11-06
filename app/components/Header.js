@@ -142,7 +142,7 @@ export default function Header() {
       {/* Farcaster MiniApp indicator */}
       {isInFrame && (
         <div className="farcaster-badge">
-          🟣 Farcaster Frame
+          🔵 Farcaster Frame
         </div>
       )}
 
@@ -150,7 +150,7 @@ export default function Header() {
       {farcasterProfile && (
         <div className="farcaster-profile">
           <img
-  src={farcasterProfile.pfp_url || farcasterProfile.pfp?.url || "/default-avatar.png"}
+  src={farcasterProfile.pfp_url || "/default-avatar.png"}
   alt="Farcaster avatar"
   className="farcaster-avatar"
 />

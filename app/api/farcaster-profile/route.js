@@ -16,7 +16,7 @@ export async function GET(req) {
           accept: "application/json",
           "x-api-key": process.env.NEYNAR_API_KEY,
         },
-        cache: "no-store", // ensures fresh data
+        cache: "no-store",
       }
     );
 
@@ -26,18 +26,19 @@ export async function GET(req) {
     }
 
     const data = await res.json();
-    const user = data?.users?.[0] || data?.result?.users?.[0];
+    const user = data?.users?.[0];
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // ✅ Neynar returns pfp_url at the top level
     return NextResponse.json({
       fid: user.fid,
       username: user.username,
       display_name: user.display_name,
       bio: user.profile?.bio?.text || null,
-      pfp: { url: user.pfp?.url || null }, // ✅ matches frontend key: farcasterProfile.pfp?.url
+      pfp_url: user.pfp_url || null, // ✅ Use pfp_url directly
     });
   } catch (err) {
     console.error("Farcaster API error:", err);
