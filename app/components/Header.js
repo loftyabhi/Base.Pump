@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
+import sdk from "@farcaster/miniapp-sdk";
 
 export default function Header() {
   const [isInFrame, setIsInFrame] = useState(false);
@@ -15,27 +16,74 @@ export default function Header() {
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check if in Farcaster frame
+    const checkFrame = async () => {
+      try {
+        const context = await sdk.context;
+        if (context) {
+          setIsInFrame(true);
+          // Fetch Farcaster profile if available
+          if (context.user?.fid) {
+            fetchFarcasterProfile(context.user.fid);
+          }
+        }
+      } catch (err) {
+        console.log("Not in Farcaster frame");
+        setIsInFrame(false);
+      }
+    };
+    
+    checkFrame();
   }, []);
+
+  const fetchFarcasterProfile = async (fid) => {
+    try {
+      const res = await fetch(`/api/farcaster-profile?fid=${fid}`);
+      if (res.ok) {
+        const profile = await res.json();
+        setFarcasterProfile(profile);
+      }
+    } catch (err) {
+      console.error("Failed to fetch Farcaster profile:", err);
+    }
+  };
 
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
-      // Try Coinbase wallet first, then MetaMask, then injected
-      const metaMask = connectors.find((c) => c.id === "metaMask");
-      const injected = connectors.find((c) => c.id === "injected");
-      const coinbase = connectors.find((c) => c.id === "coinbaseWalletSDK");
+      if (isInFrame) {
+        // Inside Farcaster: use Coinbase Smart Wallet
+        const coinbase = connectors.find((c) => c.id === "coinbaseWalletSDK");
+        if (coinbase) {
+          await connect({ connector: coinbase });
+          setSelectedWallet("Coinbase Smart Wallet");
+        } else {
+          alert("Coinbase Wallet connector not found");
+        }
+      } else {
+        // Outside Farcaster: try MetaMask first, then injected, then Coinbase
+        const metaMask = connectors.find((c) => c.id === "metaMask");
+        const injected = connectors.find((c) => c.id === "injected");
+        const coinbase = connectors.find((c) => c.id === "coinbaseWalletSDK");
 
-      const connector = injected || metaMask || coinbase;
+        const connector = metaMask || injected || coinbase;
 
-      if (!connector) {
-        alert("No wallet found. Please install MetaMask, Coinbase Wallet, or another Web3 wallet.");
-        return;
+        if (!connector) {
+          alert("No wallet found. Please install MetaMask, Coinbase Wallet, or another Web3 wallet.");
+          return;
+        }
+
+        await connect({ connector });
+        setSelectedWallet(connector.name);
       }
-
-      await connect({ connector });
-      setSelectedWallet(connector.name);
     } catch (err) {
       console.error("Connection error:", err);
+      if (err.message?.includes("User rejected")) {
+        alert("Connection cancelled");
+      } else {
+        alert("Failed to connect wallet. Please try again.");
+      }
     } finally {
       setIsConnecting(false);
     }
@@ -45,7 +93,6 @@ export default function Header() {
     try {
       await disconnect();
       setSelectedWallet(null);
-      setFarcasterProfile(null);
       setShowWalletMenu(false);
     } catch (err) {
       console.error("Failed to disconnect:", err);
@@ -67,7 +114,7 @@ export default function Header() {
       {/* Farcaster MiniApp indicator */}
       {isInFrame && (
         <div className="farcaster-badge">
-          🔵 Farcaster Mini App
+          🟣 Farcaster Frame
         </div>
       )}
 
@@ -153,6 +200,10 @@ export default function Header() {
           opacity: 0.8;
           margin-left: auto;
           white-space: nowrap;
+          padding: 0.4rem 0.8rem;
+          background: rgba(139, 92, 246, 0.1);
+          border-radius: 8px;
+          border: 1px solid rgba(139, 92, 246, 0.3);
         }
 
         .farcaster-profile {

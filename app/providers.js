@@ -10,23 +10,7 @@ import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-const projectId = process.env.WALLETCONNECT_PROJECT_ID || "";
-
-const config = createConfig({
-  chains: [base, baseSepolia],
-  transports: {
-    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL),
-    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL),
-  },
-  connectors: [
-    coinbaseWallet({
-      appName: "BasePump",
-      preference: "all", // Allows both smart wallet and extension
-    }),
-    injected({ target: "metaMask" }),
-    ...(projectId ? [walletConnect({ projectId })] : []),
-  ],
-});
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "";
 
 export function Providers({ children }) {
   const [isInFrame, setIsInFrame] = useState(false);
@@ -39,12 +23,9 @@ export function Providers({ children }) {
         const inside = !!context;
         setIsInFrame(inside);
 
-        // ✅ FIX: Only manage wallet preference in Farcaster
         if (typeof window !== "undefined" && inside) {
-          // Force smart wallet preference inside Farcaster
           localStorage.setItem("__onchainkit_wallet_preference__", "smartWallet");
         }
-        // Don't clear preference outside Farcaster - let user's choice persist
 
         sdk.actions.ready();
       } catch (err) {
@@ -58,16 +39,57 @@ export function Providers({ children }) {
     initSDK();
   }, []);
 
-  if (!isSDKReady) return null;
+  // ✅ Create config dynamically based on frame status
+  const config = createConfig({
+    chains: [base, baseSepolia],
+    transports: {
+      [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL),
+      [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL),
+    },
+    connectors: isInFrame
+      ? [
+          // Inside Farcaster: prioritize Coinbase Smart Wallet
+          coinbaseWallet({
+            appName: "BasePump",
+            preference: "smartWalletOnly", // Force smart wallet in Farcaster
+          }),
+        ]
+      : [
+          // Outside Farcaster: all wallet options
+          coinbaseWallet({
+            appName: "BasePump",
+            preference: "all",
+          }),
+          injected({ target: "metaMask" }),
+          ...(projectId ? [walletConnect({ projectId })] : []),
+        ],
+  });
+
+  if (!isSDKReady) {
+    return (
+      <div style={{ 
+        display: "flex", 
+        justifyContent: "center", 
+        alignItems: "center", 
+        height: "100vh",
+        background: "#000",
+        color: "#00bfff"
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <OnchainKitProvider
-          apiKey={process.env.ONCHAINKIT_API_KEY}
+          apiKey={process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY}
           chain={base}
           config={{
-            farcaster: { enabled: isInFrame },
+            appearance: {
+              mode: "dark",
+            },
           }}
         >
           {children}
