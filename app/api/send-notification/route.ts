@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const tokens = allTokens.map((u) => u.token);
+    const tokens = allTokens.map((u: { token: string }) => u.token);
     const payload = {
       notificationId: `manual-${Date.now()}`,
       title,
