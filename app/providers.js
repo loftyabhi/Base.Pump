@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { base, baseSepolia } from "wagmi/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { coinbaseWallet, walletConnect, injected } from "wagmi/connectors";
+import { farcasterMiniApp as miniAppConnector } from "@farcaster/miniapp-wagmi-connector";
 import sdk from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
 
@@ -22,10 +23,6 @@ export function Providers({ children }) {
         const context = await sdk.context;
         const inside = !!context;
         setIsInFrame(inside);
-
-        if (typeof window !== "undefined" && inside) {
-          localStorage.setItem("__onchainkit_wallet_preference__", "smartWallet");
-        }
 
         sdk.actions.ready();
       } catch (err) {
@@ -48,11 +45,8 @@ export function Providers({ children }) {
     },
     connectors: isInFrame
       ? [
-          // Inside Farcaster: prioritize Coinbase Smart Wallet
-          coinbaseWallet({
-            appName: "BasePump",
-            preference: "smartWalletOnly", // Force smart wallet in Farcaster
-          }),
+          // ✅ Inside Farcaster: use the Farcaster MiniApp connector
+          miniAppConnector(),
         ]
       : [
           // Outside Farcaster: all wallet options

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import sdk from "@farcaster/miniapp-sdk";
 
@@ -6,7 +6,6 @@ export default function Header() {
   const [isInFrame, setIsInFrame] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [selectedWallet, setSelectedWallet] = useState(null);
   const [farcasterProfile, setFarcasterProfile] = useState(null);
   const [showWalletMenu, setShowWalletMenu] = useState(false);
 
@@ -14,14 +13,39 @@ export default function Header() {
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
+  // Close wallet menu when clicking outside
+  useEffect(() => {
+    if (!showWalletMenu) return;
+
+    const handleClickOutside = (event) => {
+      const walletDropdown = document.querySelector('.wallet-dropdown');
+      const walletButton = document.querySelector('.wallet-status-btn');
+      
+      if (
+        walletDropdown &&
+        walletButton &&
+        !walletDropdown.contains(event.target) &&
+        !walletButton.contains(event.target)
+      ) {
+        setShowWalletMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showWalletMenu]);
+
   useEffect(() => {
     setMounted(true);
+    let isMounted = true;
     
     // Check if in Farcaster frame
     const checkFrame = async () => {
       try {
         const context = await sdk.context;
-        if (context) {
+        if (isMounted && context) {
           setIsInFrame(true);
           // Fetch Farcaster profile if available
           if (context.user?.fid) {
@@ -29,12 +53,18 @@ export default function Header() {
           }
         }
       } catch (err) {
-        console.log("Not in Farcaster frame");
-        setIsInFrame(false);
+        if (isMounted) {
+          console.log("Not in Farcaster frame");
+          setIsInFrame(false);
+        }
       }
     };
     
     checkFrame();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const fetchFarcasterProfile = async (fid) => {
@@ -53,13 +83,13 @@ export default function Header() {
     setIsConnecting(true);
     try {
       if (isInFrame) {
-        // Inside Farcaster: use Coinbase Smart Wallet
-        const coinbase = connectors.find((c) => c.id === "coinbaseWalletSDK");
-        if (coinbase) {
-          await connect({ connector: coinbase });
-          setSelectedWallet("Coinbase Smart Wallet");
+        // ✅ Inside Farcaster: use the first (and only) connector - the MiniApp connector
+        const miniApp = connectors[0];
+        if (miniApp) {
+          await connect({ connector: miniApp });
         } else {
-          alert("Coinbase Wallet connector not found");
+          console.error("MiniApp connector not found");
+          alert("Farcaster wallet connector not available");
         }
       } else {
         // Outside Farcaster: try MetaMask first, then injected, then Coinbase
@@ -75,11 +105,10 @@ export default function Header() {
         }
 
         await connect({ connector });
-        setSelectedWallet(connector.name);
       }
     } catch (err) {
       console.error("Connection error:", err);
-      if (err.message?.includes("User rejected")) {
+      if (err.message?.includes("User rejected") || err.message?.includes("User denied")) {
         alert("Connection cancelled");
       } else {
         alert("Failed to connect wallet. Please try again.");
@@ -92,7 +121,6 @@ export default function Header() {
   const handleDisconnect = async () => {
     try {
       await disconnect();
-      setSelectedWallet(null);
       setShowWalletMenu(false);
     } catch (err) {
       console.error("Failed to disconnect:", err);
@@ -122,10 +150,11 @@ export default function Header() {
       {farcasterProfile && (
         <div className="farcaster-profile">
           <img
-            src={farcasterProfile.pfp?.url || "/default-avatar.png"}
-            alt="Farcaster avatar"
-            className="farcaster-avatar"
-          />
+  src={farcasterProfile.pfp_url || farcasterProfile.pfp?.url || "/default-avatar.png"}
+  alt="Farcaster avatar"
+  className="farcaster-avatar"
+/>
+
           <span className="farcaster-username">
             @{farcasterProfile.username || farcasterProfile.fid}
           </span>
@@ -148,7 +177,7 @@ export default function Header() {
               onClick={() => setShowWalletMenu(!showWalletMenu)}
               className="btn--fancy wallet-status-btn"
             >
-              {selectedWallet ? selectedWallet.toUpperCase() : "CONNECTED"}
+              {isInFrame ? "FARCASTER WALLET" : "CONNECTED"}
             </button>
 
             {showWalletMenu && (
