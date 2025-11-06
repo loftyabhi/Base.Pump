@@ -21,7 +21,7 @@ const config = createConfig({
   connectors: [
     coinbaseWallet({
       appName: "BasePump",
-      preference: "all",
+      preference: "all", // Allows both smart wallet and extension
     }),
     injected({ target: "metaMask" }),
     ...(projectId ? [walletConnect({ projectId })] : []),
@@ -34,30 +34,26 @@ export function Providers({ children }) {
 
   useEffect(() => {
     const initSDK = async () => {
-  try {
-    const context = await sdk.context;
-    const inside = !!context;
-    setIsInFrame(inside);
+      try {
+        const context = await sdk.context;
+        const inside = !!context;
+        setIsInFrame(inside);
 
-    if (typeof window !== "undefined") {
-      if (inside) {
-        // Auto-set preference for Smart Wallet when inside Farcaster
-        localStorage.setItem("__onchainkit_wallet_preference__", "smartWallet");
-      } else {
-        // Clear preference to allow MetaMask in browser
-        localStorage.removeItem("__onchainkit_wallet_preference__");
+        // ✅ FIX: Only manage wallet preference in Farcaster
+        if (typeof window !== "undefined" && inside) {
+          // Force smart wallet preference inside Farcaster
+          localStorage.setItem("__onchainkit_wallet_preference__", "smartWallet");
+        }
+        // Don't clear preference outside Farcaster - let user's choice persist
+
+        sdk.actions.ready();
+      } catch (err) {
+        console.error("Farcaster MiniApp SDK init error:", err);
+        setIsInFrame(false);
+      } finally {
+        setIsSDKReady(true);
       }
-    }
-
-    sdk.actions.ready();
-  } catch (err) {
-    console.error("Farcaster MiniApp SDK init error:", err);
-    setIsInFrame(false);
-  } finally {
-    setIsSDKReady(true);
-  }
-};
-
+    };
 
     initSDK();
   }, []);
