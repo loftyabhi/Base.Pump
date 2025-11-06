@@ -1,5 +1,8 @@
 {
-  
+  "buildCommand": "npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install --legacy-peer-deps",
   "redirects": [
     {
       "source": "/.well-known/farcaster.json",
@@ -8,10 +11,6 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ],
-  "ignoreCommand": "echo 'Skipping ignored files...'"
+    { "source": "/api/:path*", "destination": "/api/:path*" }
+  ]
 }
