@@ -1,30 +1,37 @@
 {
   "compilerOptions": {
+    /* ✅ Core setup */
     "target": "esnext",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
+    /* ✅ Mixed JS + TS support */
     "allowJs": true,
+    "checkJs": false,
     "skipLibCheck": true,
+    /* ✅ Code safety */
     "strict": true,
     "noEmit": true,
+    "forceConsistentCasingInFileNames": true,
+    /* ✅ Module & import handling */
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
+    /* ✅ React + Next.js */
+    "jsx": "preserve",
     "incremental": true,
-    "forceConsistentCasingInFileNames": true,
-    
+    /* ✅ Path aliases (same as @/lib/...) */
     "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
       ]
     },
+    /* ✅ Next.js integration */
     "plugins": [
       {
         "name": "next"
@@ -35,6 +42,9 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.json",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
