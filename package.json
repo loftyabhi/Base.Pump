@@ -1,6 +1,6 @@
 {
-  "name": "fun-pump",
-  "version": "0.1.0",
+  "name": "basepump",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,23 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@coinbase/onchainkit": "^0.38.19",
-    "@farcaster/miniapp-sdk": "^0.1.10",
-    "@farcaster/miniapp-wagmi-connector": "^1.1.0",
-    "@supabase/supabase-js": "^2.79.0",
-    "@tanstack/react-query": "^5.62.8",
-    "next": "^16.0.1",
-    "postgres": "^3.4.7",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "react-hot-toast": "^2.6.0",
-    "viem": "^2.21.53",
-    "wagmi": "^2.16.2"
+    "@coinbase/onchainkit": "0.38.19",
+    "@farcaster/miniapp-sdk": "0.2.0",
+    "@farcaster/miniapp-wagmi-connector": "1.1.0",
+    "@supabase/supabase-js": "2.39.1",
+    "@tanstack/react-query": "5.35.1",
+    "next": "15.0.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-hot-toast": "2.6.0",
+    "wagmi": "2.16.2",
+    "viem": "2.21.53"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "hardhat": "^2.22.16"
+    "@types/react": "18.3.11",
+    "@types/react-dom": "18.3.0",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.0.3",
+    "hardhat": "2.22.16"
+  },
+  "overrides": {
+    "@farcaster/miniapp-sdk": "0.2.0"
   }
 }
